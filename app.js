@@ -1,5 +1,7 @@
 (() => {
   const root = document.getElementById('root');
+  const localBundle = './.build/appjs.00.b64';
+  const rawBundle = 'https://raw.githubusercontent.com/SirishKReddy/ceramicSintering/main/.build/appjs.00.b64';
 
   function showError(message) {
     if (!root) return;
@@ -11,16 +13,27 @@
       </main>`;
   }
 
+  async function fetchText(url) {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`${url} returned HTTP ${response.status}`);
+    return response.text();
+  }
+
+  async function loadBundle() {
+    try {
+      return await fetchText(localBundle);
+    } catch (localError) {
+      console.warn('Local Pages asset unavailable; using GitHub raw fallback.', localError);
+      return fetchText(`${rawBundle}?v=881ca0d610b35429bccef1f96df3e2170e8e9f24`);
+    }
+  }
+
   if (!window.React || !window.ReactDOM) {
     showError('The React browser libraries did not load. Check the internet connection and reload this page.');
     return;
   }
 
-  fetch('./.build/appjs.00.b64', { cache: 'no-cache' })
-    .then((response) => {
-      if (!response.ok) throw new Error(`Simulation bundle returned HTTP ${response.status}`);
-      return response.text();
-    })
+  loadBundle()
     .then((encoded) => {
       const clean = encoded.replace(/\s+/g, '');
       const binary = atob(clean);
@@ -31,6 +44,6 @@
     })
     .catch((error) => {
       console.error(error);
-      showError('The simulation file could not be loaded. Reload the page. If the problem continues, the repository build is incomplete.');
+      showError('The simulation file could not be loaded. Wait about one minute for GitHub Pages to finish updating, then reload.');
     });
 })();
